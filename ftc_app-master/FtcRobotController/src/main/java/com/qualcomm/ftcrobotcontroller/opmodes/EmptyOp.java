@@ -45,6 +45,16 @@ public class EmptyOp extends OpMode {
     public void stop() {
 
     }
+    
+    
+    //Takes in value from controller (-1 to 1) and outputs a value for the motors (-1 to 1)
+    double scaleInput(double dVal)  {
+		double mag = abs(dVal);
+		if(mag < 10) // dead zone
+			return 0;
+		else
+			return sgn(dVal)*(mag-.1)*(mag - .1) * 1.2345; //notice: quadratic
+	}
 
     private void printVals(String name, double[] values) {
         for(int i = 0; i < values.length; i++)
