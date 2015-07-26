@@ -1,0 +1,76 @@
+package com.qualcomm.ftcrobotcontroller.opmodes;
+
+import com.qualcomm.ftccommon.DbgLog;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.CompassSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+public class AutoRotateOp extends OpMode {
+  CompassSensor compass;
+  DcMotor motorRight;
+  DcMotor motorLeft;
+
+  private static final double FAIL_POINT = 45;
+  private static final double GOAL = 10;
+  private static final double BRAKE_DISTANCE = 1;
+  private static final double BRAKE_SPEED = .125;
+  private static final double SPEED = .5;
+  private static final double SAFE_BURNOUT_TIME = 1;
+  private static final double MOTION_THRESHHOLD = .25;
+
+  private double lastDistance = 0.0;
+  private double goalTime;
+
+  public AutoRotateOp() {}
+
+  @Override
+  public void start() {
+    compass = hardwareMap.compassSensor.get("compass");
+    motorRight = hardwareMap.dcMotor.get("right");
+    motorLeft = hardwareMap.dcMotor.get("left");
+    resetOdometer();
+    goalTime = time + SAFE_BURNOUT_TIME;
+  }
+
+  //This method is intended to test a nonthreaded way of driving in autonomous. 
+  //It assumes the methods "resetOdometer" and "getDistance" function with the odomemeter wheel as expected
+  public void loop() {
+    double distance = getDistance();
+    if(distance >= GOAL){
+      motorRight.setPower(0);
+      motorLeft.setPower(0);
+    }
+    else if(distance > GOAL - BRAKE_DISTANCE){
+      double facing = compass.getDirection();
+      double temp = (SPEED*(GOAL - distance) + BRAKE_SPEED*(distance - GOAL + BRAKE_DISTANCE))/BRAKE_DISTANCE;
+      motorRight.setPower((1 + facing/FAIL_POINT) * temp)
+      motorLeft.setPower((1 - facing/FAIL_POINT) * temp);
+    }
+    else{
+      double facing = compass.getDirection();
+      motorRight.setPower(MOTOR_POWER * (1 + facing/FAIL_POINT));
+      motorLeft.setPower(MOTOR_POWER * (1 - facing/FAIL_POINT));
+    }
+    
+    if(time >=  goalTime){
+       if(getDistance() - lastDistance < motionThreshhold){
+        motorRight.setPower(0);
+        motorLeft.setPower(0);
+        double temp = time + 1.0;
+        while(time < temp);
+       }
+       goalTime = time + SAFE_BURNOUT_TIME;
+       lastDistance = getDistance();
+    }
+  }
+  
+  private void resetOdometer(){}
+  private double getDistance(){return 0.0;}
+
+  @Override
+  public void stop() {
+    motorRight.setPower(0);
+    motorLeft.setPower(0);
+  }
+
+}
