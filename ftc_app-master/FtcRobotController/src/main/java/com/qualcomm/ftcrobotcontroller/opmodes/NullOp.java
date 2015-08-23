@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 Qualcomm Technologies Inc
+/* Copyright (c) 2014, 2015 Qualcomm Technologies Inc
 
 All rights reserved.
 
@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 package com.qualcomm.ftcrobotcontroller.opmodes;
 
-import com.qualcomm.ftccommon.DbgLog;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -43,24 +42,17 @@ import java.util.Date;
  * <p>
  *Enables control of the robot via the gamepad
  */
-public class NullOp extends OpMode { //shows date and how long it's been running JL
+public class NullOp extends OpMode {
 
   private String startDate;
   private ElapsedTime runtime = new ElapsedTime();
-
-  /**
-   * Constructor
-   */
-  public NullOp() {
-
-  }
 
   /*
    * Code to run when the op mode is first enabled goes here
    * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#start()
    */
   @Override
-  public void start() { //almost like start is the replacement for constructor JL
+  public void init() {
     startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
     runtime.reset();
   }
@@ -71,16 +63,7 @@ public class NullOp extends OpMode { //shows date and how long it's been running
    */
   @Override
   public void loop() {
-    telemetry.addData("1 Start", "NullOp started at " + startDate); //shows info on robot phone JL
+    telemetry.addData("1 Start", "NullOp started at " + startDate);
     telemetry.addData("2 Status", "running for " + runtime.toString());
-  }
-
-  /*
-   * Code to run when the op mode is first disabled goes here
-   * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#stop()
-   */
-  @Override
-  public void stop() {
-
   }
 }

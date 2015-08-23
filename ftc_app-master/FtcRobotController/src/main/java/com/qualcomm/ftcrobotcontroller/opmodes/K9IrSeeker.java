@@ -42,10 +42,9 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Enables control of the robot via the gamepad
  */
 public class K9IrSeeker extends OpMode {
-
-	//wtf is final? JL
+	
 	final static double MOTOR_POWER = 0.15; // Higher values will cause the robot to move faster
-	final static double HOLD_IR_SIGNAL_STRENGTH = 0.50; // Higher values will cause the robot to follow closer, we can control sginal strength JL
+	final static double HOLD_IR_SIGNAL_STRENGTH = 0.50; // Higher values will cause the robot to follow closer
 
 	double armPosition;
 	double clawPosition;
@@ -64,20 +63,18 @@ public class K9IrSeeker extends OpMode {
 	}
 
 	/*
-	 * Code to run when the op mode is first enabled goes here
+	 * Code to run when the op mode is initialized goes here
 	 * 
-	 * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#start()
+	 * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#init()
 	 */
 	@Override
-	public void start() {
+	public void init() {
 
 		/*
 		 * Use the hardwareMap to get the dc motors and servos by name.
 		 * Note that the names of the devices must match the names used
 		 * when you configured your robot and created the configuration file.
 		 */
-
-		//hardwareMap is where we configure the robot? JL
 		
 		/*
 		 * For the demo Tetrix K9 bot we assume the following,
@@ -91,7 +88,7 @@ public class K9IrSeeker extends OpMode {
 		 */
 		motorRight = hardwareMap.dcMotor.get("motor_2");
 		motorLeft = hardwareMap.dcMotor.get("motor_1");
-		motorLeft.setDirection(DcMotor.Direction.REVERSE); //Must manually reverse motors JL
+		motorLeft.setDirection(DcMotor.Direction.REVERSE);
 		
 		arm = hardwareMap.servo.get("servo_1");
 		claw = hardwareMap.servo.get("servo_6");
@@ -139,7 +136,6 @@ public class K9IrSeeker extends OpMode {
 			angle = irSeeker.getAngle();
 			strength = irSeeker.getStrength();
 
-			//rather crude...JL
             if (angle < -60)  {
                 /*
                  * IR source is to the way left.
