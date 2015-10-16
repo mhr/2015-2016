@@ -54,7 +54,7 @@ public class PushBotHardware extends OpMode
     //--------
     // This class member manages the aspects of the left arm motor.
     //--------
-    DcMotor v_motor_left_arm;
+//    DcMotor v_motor_left_arm;
 
     //--------------------------------------------------------------------------
     //
@@ -63,7 +63,7 @@ public class PushBotHardware extends OpMode
     //--------
     // This class member manages the aspects of the left hand servo.
     //--------
-    Servo v_servo_left_hand;
+  //  Servo v_servo_left_hand;
 
     //--------------------------------------------------------------------------
     //
@@ -72,7 +72,7 @@ public class PushBotHardware extends OpMode
     //--------
     // This class member manages the aspects of the right hand servo.
     //--------
-    Servo v_servo_right_hand;
+  //  Servo v_servo_right_hand;
 
     //--------------------------------------------------------------------------
     //
@@ -135,7 +135,7 @@ public class PushBotHardware extends OpMode
         //
         // Connect the arm motor.
         //
-        v_motor_left_arm = hardwareMap.dcMotor.get ("left_arm");
+       // v_motor_left_arm = hardwareMap.dcMotor.get ("left_arm");
 
         //
         // Connect the servo motors.
@@ -143,13 +143,13 @@ public class PushBotHardware extends OpMode
         // Indicate the initial position of both the left and right servos.  The
         // hand should be halfway opened/closed.
         //
-        double l_hand_position = 0.5;
+       // double l_hand_position = 0.5;
 
-        v_servo_left_hand = hardwareMap.servo.get ("left_hand");
-        v_servo_left_hand.setPosition (l_hand_position);
+      //  v_servo_left_hand = hardwareMap.servo.get ("left_hand");
+      //  v_servo_left_hand.setPosition (l_hand_position);
 
-        v_servo_right_hand = hardwareMap.servo.get ("right_hand");
-        v_servo_right_hand.setPosition (l_hand_position);
+      //  v_servo_right_hand = hardwareMap.servo.get ("right_hand");
+      //  v_servo_right_hand.setPosition (l_hand_position);
 
     } // PushBotHardware::init
 
@@ -411,7 +411,9 @@ public class PushBotHardware extends OpMode
         // Have the encoders reached the specified values?
         //
         // TODO Implement stall code using these variables.
-        //
+
+        telemetry.addData ("15", "Left Count: " + v_motor_left_drive.getCurrentPosition());
+        telemetry.addData ("16", "Right Count: " + v_motor_right_drive.getCurrentPosition());
         if ((Math.abs (v_motor_left_drive.getCurrentPosition ()) > p_left_count) &&
             (Math.abs (v_motor_right_drive.getCurrentPosition ()) > p_right_count))
         {
@@ -467,11 +469,11 @@ public class PushBotHardware extends OpMode
     //--------
     // Access the left arm motor's power level.
     //--------
-    double a_left_arm_power ()
+   /* double a_left_arm_power ()
     {
         return v_motor_left_arm.getPower ();
 
-    } // PushBotManual::a_left_arm_power
+    } // PushBotManual::a_left_arm_power*/
 
     //--------------------------------------------------------------------------
     //
@@ -480,11 +482,11 @@ public class PushBotHardware extends OpMode
     //--------
     // Access the hand position.
     //--------
-    double a_hand_position ()
+ /*   double a_hand_position ()
     {
         return v_servo_left_hand.getPosition ();
 
-    } // PushBotManual::a_hand_position
+    } // PushBotManual::a_hand_position*/
 
     //--------------------------------------------------------------------------
     //
@@ -493,7 +495,7 @@ public class PushBotHardware extends OpMode
     //--------
     // Mutate the hand position.
     //--------
-    void m_hand_position (double p_position)
+  /*  void m_hand_position (double p_position)
     {
         //
         // Ensure the specifiec value is legal.
@@ -511,5 +513,5 @@ public class PushBotHardware extends OpMode
         v_servo_left_hand.setPosition (l_position);
         v_servo_right_hand.setPosition (1.0 - l_position);
 
-    } // PushBotManual::m_hand_position
+    } // PushBotManual::m_hand_position*/
 }

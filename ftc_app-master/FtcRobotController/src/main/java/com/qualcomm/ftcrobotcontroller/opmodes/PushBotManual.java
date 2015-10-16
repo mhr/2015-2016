@@ -85,8 +85,8 @@ public class PushBotManual extends PushBotTelemetry
         // Manage the arm motor.
         //
         float l_gp2_left_stick_y = -gamepad2.left_stick_y;
-        float l_left_arm_power = (float)scale_motor_power (l_gp2_left_stick_y);
-        v_motor_left_arm.setPower (l_left_arm_power);
+       // float l_left_arm_power = (float)scale_motor_power (l_gp2_left_stick_y);
+         //v_motor_left_arm.setPower (l_left_arm_power);
 
         //----------------------------------------------------------------------
         //
@@ -104,11 +104,11 @@ public class PushBotManual extends PushBotTelemetry
         //
         if (gamepad2.x)
         {
-            m_hand_position (a_hand_position () + 0.05);
+           // m_hand_position (a_hand_position () + 0.05);
         }
         else if (gamepad2.b)
         {
-            m_hand_position (a_hand_position () - 0.05);
+          //  m_hand_position (a_hand_position () - 0.05);
         }
 
         //

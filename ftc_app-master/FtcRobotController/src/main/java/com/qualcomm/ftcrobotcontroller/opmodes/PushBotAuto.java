@@ -134,7 +134,7 @@ public class PushBotAuto extends PushBotTelemetry
             // If they haven't, then the op-mode remains in this state (i.e this
             // block will be executed the next time this method is called).
             //
-            if (have_drive_encoders_reached (2880, 2880))
+            if (have_drive_encoders_reached (1440, 1440))//(1, 1) (2880, 2880))
             {
                 //
                 // Reset the encoders to ensure they are at a known good value.
@@ -171,8 +171,8 @@ public class PushBotAuto extends PushBotTelemetry
         //
         case 3:
             run_using_encoders ();
-            set_drive_power (-1.0f, 1.0f);
-            if (have_drive_encoders_reached (2880, 2880))
+            set_drive_power (-1.0f, -1.0f);
+            if (have_drive_encoders_reached (1440, 1440))
             {
                 reset_drive_encoders ();
                 set_drive_power (0.0f, 0.0f);
@@ -197,8 +197,8 @@ public class PushBotAuto extends PushBotTelemetry
         //
         case 5:
             run_using_encoders ();
-            set_drive_power (1.0f, -1.0f);
-            if (have_drive_encoders_reached (2880, 2880))
+            set_drive_power (1.0f, 1.0f);
+            if (have_drive_encoders_reached (1440, 1440))
             {
                 reset_drive_encoders ();
                 set_drive_power (0.0f, 0.0f);
