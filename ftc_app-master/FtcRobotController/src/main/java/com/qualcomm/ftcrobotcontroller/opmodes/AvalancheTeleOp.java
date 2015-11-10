@@ -3,7 +3,7 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.Servo;import java.lang.Math;import java.lang.Override;
 
 public class AvalancheTeleOp extends OpMode {
 
@@ -31,29 +31,45 @@ public class AvalancheTeleOp extends OpMode {
         motorRightBack = hardwareMap.dcMotor.get("rb");
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
-        scoopTop = hardwareMap.servo.get("st");
-        scoopLeft = hardwareMap.servo.get("sl");
-        scoopRight = hardwareMap.servo.get("sr");
+        //scoopTop = hardwareMap.servo.get("st");
+        //scoopLeft = hardwareMap.servo.get("sl");
+        //scoopRight = hardwareMap.servo.get("sr");
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
     }
 
+    private double stValue = 0.0;
+    private double slValue = 0.0;
+    private double srValue = 0.0;
+    boolean e = true;
     @Override
     public void loop() {
+        runWithEncoders();
         // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
         // -1 is full down
         double leftJoy = scaleInput(-gamepad1.left_stick_y);
         double rightJoy = scaleInput(-gamepad1.right_stick_y);
-        double stValue = 0.0;
-        double slValue = 0.0;
-        double srValue = 0.0;
 
-        // write the values to the motors
-        motorLeftFront.setPower(leftJoy);
-        motorLeftBack.setPower(leftJoy);
-        motorRightFront.setPower(rightJoy);
-        motorRightBack.setPower(rightJoy);
 
+        if(gamepad1.right_trigger > .1 || gamepad1.right_bumper || gamepad1.left_trigger > .1|| gamepad1.left_bumper)
+        {
+            if(gamepad1.right_trigger > .1)
+                setDrivePower(1.0,1.0,1.0,1.0);
+            else if(gamepad1.right_bumper)
+                setDrivePower(.5,.5,.5,.5);
+            else if(gamepad1.left_trigger > .1)
+                setDrivePower(-1.0,-1.0,-1.0,-1.0);
+            else
+                setDrivePower(-.5,-.5,-.5,-.5);
+        }
+        else {
+            // write the values to the motors
+            motorLeftFront.setPower(leftJoy);
+            motorLeftBack.setPower(leftJoy);
+            motorRightFront.setPower(rightJoy);
+            motorRightBack.setPower(rightJoy);
+        }
+/*
         if(gamepad1.y)
         {
             if(stValue == 0.9)
@@ -64,18 +80,18 @@ public class AvalancheTeleOp extends OpMode {
 
         if(gamepad1.x)
         {
-            if(slValue == 0.9 && srValue == 0.1) {
+            if(slValue == 0.9) {
                 slValue = 0.0;
                 srValue = 1.0;
             }
-            else if(slValue == 0.0 && srValue == 1.0) {
+            else if(slValue == 0.0) {
                 slValue = 0.9;
                 srValue = 0.1;
             }
         }
 
         scoopTop.setPosition(stValue);
-
+*/
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
@@ -120,13 +136,21 @@ public class AvalancheTeleOp extends OpMode {
     void setDrivePower(double LFPower, double LBPower, double RFPower, double RBPower)
     {
         if(motorLeftFront != null)
-            motorLeftFront.setPower(LFPower);
+            motorLeftFront.setPower(LFPower * .78);
+        else
+            throw new RuntimeException("motorLeftFront is null");
         if(motorLeftBack!= null)
-            motorLeftBack.setPower(LBPower);
+            motorLeftBack.setPower(LBPower * .35);
+        else
+            throw new RuntimeException("motorLeftBack is null");
         if(motorRightFront != null)
-            motorRightFront.setPower(RFPower);
+            motorRightFront.setPower(RFPower * .78);
+        else
+            throw new RuntimeException("motorRightFront is null");
         if(motorRightBack != null)
-            motorRightBack.setPower(RBPower);
+            motorRightBack.setPower(RBPower * .35);
+        else
+            throw new RuntimeException("motorRightBack is null");
     }
 
     public void runWithLeftDriveEncoder()
