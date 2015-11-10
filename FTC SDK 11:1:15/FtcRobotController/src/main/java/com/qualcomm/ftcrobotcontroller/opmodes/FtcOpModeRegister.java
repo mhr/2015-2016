@@ -65,6 +65,8 @@ public class FtcOpModeRegister implements OpModeRegister {
     manager.register("AvalancheTeleOp", AvalancheTeleOp.class);
     manager.register("MRRGBExample", MRRGBExample.class);
     manager.register("IMUtest", IMUtest.class);
+    manager.register("AvalancheEncoderTest", AvalancheEncoderTest.class);
+    manager.register("AvalancheRobot1", AvalancheRobot1.class);
 
     /*
      * Uncomment any of the following lines if you want to register an op mode.
