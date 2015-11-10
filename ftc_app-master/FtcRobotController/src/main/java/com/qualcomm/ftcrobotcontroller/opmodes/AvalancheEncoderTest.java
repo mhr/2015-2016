@@ -3,12 +3,15 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
-
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.GyroSensor;
 /**
  * Created by JasmineLee on 11/1/15.
  */
 public class AvalancheEncoderTest extends OpMode
 {
+    GyroSensor gyro;
+
     int v_state;
     DcMotor motorRightFront;
     DcMotor motorRightBack;
@@ -22,6 +25,11 @@ public class AvalancheEncoderTest extends OpMode
     @Override
     public void init()
     {
+        gyro = hardwareMap.gyroSensor.get("gyro");
+        gyro.calibrate();
+        while (gyro.isCalibrating())  {
+            try{Thread.sleep(50);}catch(Exception e){}
+        }
         motorRightFront = hardwareMap.dcMotor.get("rf");
         motorRightBack = hardwareMap.dcMotor.get("rb");
         motorLeftFront = hardwareMap.dcMotor.get("lf");
@@ -31,16 +39,19 @@ public class AvalancheEncoderTest extends OpMode
         resetDriveEncoders();
     }
 
+
+    private long integration = 0;
+    private long lastTime;
+    private long lastSuccess = 0;
     @Override
     public void loop() {
 
-        switch (v_state)
-        {
+        switch (v_state) {
             // Synchronize the state machine and hardware.
             case 0:
                 // Reset the encoders to ensure they are at a known good value.
                 resetDriveEncoders();
-
+                lastTime = System.currentTimeMillis();
                 // Transition to the next state when this method is called again.
                 v_state++;
 
@@ -54,12 +65,12 @@ public class AvalancheEncoderTest extends OpMode
                 // be in this state and NOT the previous or the encoders will not
                 // work.  It doesn't need to be in subsequent states.
                 //
-                runWithEncoders ();
+                runWithEncoders();
 
                 //
                 // Start the drive wheel motors at full power.
                 //
-                setDrivePower (1.0f, 1.0f, 1.0f, 1.0f);
+                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f);
 
                 //
                 // Have the motor shafts turned the required amount?
@@ -67,17 +78,16 @@ public class AvalancheEncoderTest extends OpMode
                 // If they haven't, then the op-mode remains in this state (i.e this
                 // block will be executed the next time this method is called).
                 //
-                if (haveDriveEncodersReached (2880, 2880))
-                {
+                if (haveDriveEncodersReached(10000, 10000)) {
                     //
                     // Reset the encoders to ensure they are at a known good value.
                     //
-                    resetDriveEncoders ();
-
+                    resetDriveEncoders();
+                    gyro.resetZAxisIntegrator();
                     //
                     // Stop the motors.
                     //
-                    setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
+                    //setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
 
                     //
                     // Transition to the next state when this method is called
@@ -90,8 +100,8 @@ public class AvalancheEncoderTest extends OpMode
             // Wait...
             //
             case 2:
-                if (haveDriveEncodersReset ())
-                {
+
+                if (haveDriveEncodersReset()) {
                     v_state++;
                 }
                 break;
@@ -99,14 +109,30 @@ public class AvalancheEncoderTest extends OpMode
             // Turn left until the encoders exceed the specified values.
             //
             case 3:
-                runWithEncoders ();
-                setDrivePower (-1.0f, -1.0f, 1.0f, 1.0f);
-                if (haveDriveEncodersReached (2880, 2880))
-                {
-                    resetDriveEncoders ();
-                    setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
-                    v_state++;
+                runWithEncoders();
+                int p = 180 - gyro.getHeading();
+                if(p < -90)
+                    p += 360;
+                integration += Math.abs(p - 180) * (System.currentTimeMillis() - lastTime);
+                int d = -gyro.rawZ();
+
+                double power = .005 * p + .000005 * integration + .01 * d;
+                power = Math.min(1, power);
+                setDrivePower(power, power, -power,  -power);
+
+                if (Math.abs(180 - gyro.getHeading()) < 3) {
+                    if(lastSuccess == 0)
+                        lastSuccess = System.currentTimeMillis();
+                    else if(System.currentTimeMillis() - lastSuccess > 500) {
+                        setDrivePower(0.0, 0.0, 0.0, 0.0);
+                        resetDriveEncoders();
+                        integration = 0;
+                        gyro.resetZAxisIntegrator();
+                        v_state++;
+                    }
                 }
+                else
+                    lastSuccess = 0;
                 break;
             //
             // Wait...
@@ -122,8 +148,8 @@ public class AvalancheEncoderTest extends OpMode
             //
             case 5:
                 runWithEncoders();
-                setDrivePower(1.0f, 1.0f, -1.0f, -1.0f);
-                if(haveDriveEncodersReached (2880, 2880))
+                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f);
+                if(haveDriveEncodersReached (10000, 10000))
                 {
                     resetDriveEncoders ();
                     setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
@@ -190,13 +216,21 @@ public class AvalancheEncoderTest extends OpMode
     void setDrivePower(double LFPower, double LBPower, double RFPower, double RBPower)
     {
         if(motorLeftFront != null)
-            motorLeftFront.setPower(LFPower);
+            motorLeftFront.setPower(LFPower * .78);
+        else
+            throw new RuntimeException("motorLeftFront is null");
         if(motorLeftBack!= null)
-            motorLeftBack.setPower(LBPower);
+            motorLeftBack.setPower(LBPower * .35);
+        else
+            throw new RuntimeException("motorLeftBack is null");
         if(motorRightFront != null)
-            motorRightFront.setPower(RFPower);
+            motorRightFront.setPower(RFPower * .78);
+        else
+            throw new RuntimeException("motorRightFront is null");
         if(motorRightBack != null)
-            motorRightBack.setPower(RBPower);
+            motorRightBack.setPower(RBPower * .35);
+        else
+            throw new RuntimeException("motorRightBack is null");
     }
 
     public void runWithLeftDriveEncoder()
