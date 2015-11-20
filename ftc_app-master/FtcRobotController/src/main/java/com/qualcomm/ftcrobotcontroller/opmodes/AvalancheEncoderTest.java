@@ -42,6 +42,10 @@ public class AvalancheEncoderTest extends OpMode
         resetDriveEncoders();
     }
 
+
+    private long integration = 0;
+    private long lastTime;
+    private long lastSuccess = 0;
     @Override
     public void loop() {
 
@@ -83,7 +87,11 @@ public class AvalancheEncoderTest extends OpMode
                     //
                     resetDriveEncoders();
                     gyro.resetZAxisIntegrator();
+<<<<<<< HEAD
 
+=======
+                    //
+>>>>>>> origin/master
                     // Stop the motors.
                     //
                     //setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
@@ -110,7 +118,13 @@ public class AvalancheEncoderTest extends OpMode
             case 3:
                 runWithEncoders();
                 int p = 180 - gyro.getHeading();
+<<<<<<< HEAD
                 integration += p * (System.currentTimeMillis() - lastTime);
+=======
+                if(p < -90)
+                    p += 360;
+                integration += Math.abs(p - 180) * (System.currentTimeMillis() - lastTime);
+>>>>>>> origin/master
                 int d = -gyro.rawZ();
 
                 double power = .005 * p + .000005 * integration + .01 * d;
