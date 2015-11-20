@@ -3,132 +3,208 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
-import com.qualcomm.robotcore.hardware.Servo;import java.lang.Math;import java.lang.Override;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.GyroSensor;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 
-public class AvalancheTeleOp extends OpMode {
-
-    final static double MOTOR_POWER = 0.50; // Higher values will cause the robot to move faster
-
-    final static double HOLD_IR_SIGNAL_STRENGTH = 0.20; // Higher values will cause the robot to follow closer
+/**
+ * Created by JasmineLee on 11/16/15.
+ */
+public class AvalancheBcnRed extends OpMode{
 
     DcMotor motorRightFront;
     DcMotor motorRightBack;
     DcMotor motorLeftFront;
     DcMotor motorLeftBack;
-    Servo scoopTop;
-    Servo scoopLeft;
-    Servo scoopRight;
-    //IrSeekerSensor irSeeker;
+    GyroSensor gyro;
+    ColorSensor RGBleft;
+    ColorSensor RGBbottom;
 
-    public AvalancheTeleOp() {
+    boolean bottomLED;
+    boolean leftLED;
+    int v_state;
+    private long integration;
+    private long lastTime;
+    private long lastSuccess;
 
+    public AvalancheBcnRed()
+    {
     }
 
     @Override
-    public void init() {
-        //irSeeker = hardwareMap.irSeekerSensor.get("ir_seeker");
+    public void init()
+    {
+        gyro = hardwareMap.gyroSensor.get("gyro");
+        gyro.calibrate();
+        while (gyro.isCalibrating())  {
+            try{Thread.sleep(50);}catch(Exception e){}
+        }
         motorRightFront = hardwareMap.dcMotor.get("rf");
         motorRightBack = hardwareMap.dcMotor.get("rb");
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
-        //scoopTop = hardwareMap.servo.get("st");
-        //scoopLeft = hardwareMap.servo.get("sl");
-        //scoopRight = hardwareMap.servo.get("sr");
+        RGBbottom = hardwareMap.colorSensor.get("RGBb");
+        RGBleft = hardwareMap.colorSensor.get("RGBl");
+        integration = 0;
+        lastSuccess = 0;
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
+
+        // bEnabled represents the state of the LED.
+        bottomLED = true;
+        leftLED = false;
+
+        resetDriveEncoders();
     }
 
-    private double stValue = 0.0;
-    private double slValue = 0.0;
-    private double srValue = 0.0;
-    boolean e = true;
-    @Override
-    public void loop() {
-        runWithEncoders();
-        // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
-        // -1 is full down
-        double leftJoy = scaleInput(-gamepad1.left_stick_y);
-        double rightJoy = scaleInput(-gamepad1.right_stick_y);
+    //need to figure out where we want to start against the wall
+    public void loop()
+    {
+        switch (v_state) {
 
+            case 0: //Reset drive encoders
+                resetDriveEncoders();
+                v_state++;
+                break;
+            case 1:
+                if(haveDriveEncodersReset())
+                    v_state++;
+                break;
 
-        if(gamepad1.right_trigger > .1 || gamepad1.right_bumper || gamepad1.left_trigger > .1|| gamepad1.left_bumper)
-        {
-            if(gamepad1.right_trigger > .1)
-                setDrivePower(1.0,1.0,1.0,1.0);
-            else if(gamepad1.right_bumper)
-                setDrivePower(.5,.5,.5,.5);
-            else if(gamepad1.left_trigger > .1)
-                setDrivePower(-1.0,-1.0,-1.0,-1.0);
-            else
-                setDrivePower(-.5,-.5,-.5,-.5);
-        }
-        else {
-            // write the values to the motors
-            motorLeftFront.setPower(leftJoy);
-            motorLeftBack.setPower(leftJoy);
-            motorRightFront.setPower(rightJoy);
-            motorRightBack.setPower(rightJoy);
-        }
-/*
-        if(gamepad1.y)
-        {
-            if(stValue == 0.9)
-                stValue = 0.0;
-            else if(stValue == 0.0)
-                stValue = 0.9;
-        }
+            case 2: //Drive straight from wall to beacon
+                runWithEncoders();
+                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f);
 
-        if(gamepad1.x)
-        {
-            if(slValue == 0.9) {
-                slValue = 0.0;
-                srValue = 1.0;
-            }
-            else if(slValue == 0.0) {
-                slValue = 0.9;
-                srValue = 0.1;
-            }
-        }
+                if(haveDriveEncodersReached(10000, 10000)) //need to test values
+                {
+                    setDrivePower(0.0f, 0.0f, 0.0f, 0.0f);
+                    resetDriveEncoders();
+                    gyro.resetZAxisIntegrator();
+                    v_state++;
+                }
+                break;
 
-        scoopTop.setPosition(stValue);
-*/
-		/*
-		 * Send telemetry data back to driver station. Note that if we are using
-		 * a legacy NXT-compatible motor controller, then the getPower() method
-		 * will return a null value. The legacy NXT-compatible motor controllers
-		 * are currently write only.
-		 */
-        telemetry.addData("Text", "*** Robot Data ***");
-        //telemetry.addData("left power: ", leftJoy);
-        //telemetry.addData("right power: ", rightJoy);
-        telemetry.addData("gamepad1.y: ", gamepad1.y);
-        telemetry.addData("stVal: ", stValue);
+            case 3: //Turn so that side faces beacon (need to figure out which side) //need to test values
+                int p1 = 90 - gyro.getHeading();
+                integration += p1 * (System.currentTimeMillis() - lastTime);
+                int d1 = -gyro.rawZ();
+
+                double power1 = .005 * p1 + .000005 * integration + .01 * d1;
+                power1 = Math.max(-1, Math.min(1, power1));
+                setDrivePower(power1, power1, -power1,  -power1);
+
+                if (Math.abs(90 - gyro.getHeading()) < 3) {
+                    if(lastSuccess == 0)
+                        lastSuccess = System.currentTimeMillis();
+                    else if(System.currentTimeMillis() - lastSuccess > 500) {
+                        setDrivePower(0.0, 0.0, 0.0, 0.0);
+                        resetDriveEncoders();
+                        integration = 0;
+                        gyro.resetZAxisIntegrator();
+                        v_state++;
+                    }
+                }
+                else
+                    lastSuccess = 0;
+                break;
+
+            case 4: //Move to first
+                RGBbottom.enableLed(bottomLED);
+
+                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f); //will want to make power smaller
+
+                //test to see if found white tape
+                if(RGBbottom.red() < 2 && RGBbottom.blue() < 2 && RGBbottom.green() < 2)
+                {
+                    setDrivePower(0.0f, 0.0f, 0.0f, 0.0f);
+                    resetDriveEncoders();
+                }
+
+            case 5: //If the first one, press, if not, move forward, and press
+                //if first is red
+                if(RGBleft.red() > 2 && RGBleft.blue() < 2 && RGBleft.green() < 2) //test vals
+                {
+                    //press button
+                    //dumb climbers
+                }
+                else
+                {
+                    setDrivePower(1.0f, 1.0f, 1.0f, 1.0f); //will want to make power smaller
+
+                    if(haveDriveEncodersReached(100, 100)) //need to test values
+                    {
+                        setDrivePower(0.0f, 0.0f, 0.0f, 0.0f);
+                        resetDriveEncoders();
+                        gyro.resetZAxisIntegrator();
+
+                    }
+                    //dump climbers
+                }
+                v_state++;
+                break;
+
+            case 6: //turn to move out of way
+                int p2 = 90 - gyro.getHeading();
+                integration += p2 * (System.currentTimeMillis() - lastTime);
+                int d2 = -gyro.rawZ();
+
+                double power2 = .005 * p2 + .000005 * integration + .01 * d2;
+                power2 = Math.max(-1, Math.min(1, power2));
+                setDrivePower(power2, power2, -power2,  -power2);
+
+                if (Math.abs(90 - gyro.getHeading()) < 3) {
+                    if(lastSuccess == 0)
+                        lastSuccess = System.currentTimeMillis();
+                    else if(System.currentTimeMillis() - lastSuccess > 500) {
+                        setDrivePower(0.0, 0.0, 0.0, 0.0);
+                        resetDriveEncoders();
+                        integration = 0;
+                        gyro.resetZAxisIntegrator();
+                        v_state++;
+                    }
+                }
+                else
+                    lastSuccess = 0;
+
+            case 7: //Block by going into blue
+                runWithEncoders();
+                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f);
+
+                if(haveDriveEncodersReached(1000, 1000)) //need to test values
+                {
+                    setDrivePower(0.0f, 0.0f, 0.0f, 0.0f);
+                    resetDriveEncoders();
+                    gyro.resetZAxisIntegrator();
+                    v_state++;
+                }
+            default: //The autonomous actions have been accomplished
+                break;
+
+        }
     }
-    //}
 
     @Override
     public void stop() {
 
     }
 
-    double scaleInput(double dVal)  {
+    double scaleInput(double dVal)
+    {
         double[] scaleArray = { 0.0, 0.05, 0.09, 0.10, 0.12, 0.15, 0.18, 0.24,
                 0.30, 0.36, 0.43, 0.50, 0.60, 0.72, 0.85, 1.00, 1.00 };
 
         // get the corresponding index for the scaleInput array.
         int index = (int) (dVal * 16.0);
-        if (index < 0) {
+        if (index < 0)
             index = -index;
-        } else if (index > 16) {
+        else if (index > 16)
             index = 16;
-        }
 
         double dScale = 0.0;
-        if (dVal < 0) {
+        if (dVal < 0)
             dScale = -scaleArray[index];
-        } else {
+        else
             dScale = scaleArray[index];
-        }
 
         return dScale;
     }
@@ -140,7 +216,7 @@ public class AvalancheTeleOp extends OpMode {
         else
             throw new RuntimeException("motorLeftFront is null");
         if(motorLeftBack!= null)
-            motorLeftBack.setPower(LBPower * .35);
+            motorLeftBack.setPower(LBPower * .78);
         else
             throw new RuntimeException("motorLeftBack is null");
         if(motorRightFront != null)
@@ -148,7 +224,7 @@ public class AvalancheTeleOp extends OpMode {
         else
             throw new RuntimeException("motorRightFront is null");
         if(motorRightBack != null)
-            motorRightBack.setPower(RBPower * .35);
+            motorRightBack.setPower(RBPower * .78);
         else
             throw new RuntimeException("motorRightBack is null");
     }
@@ -294,7 +370,6 @@ public class AvalancheTeleOp extends OpMode {
 
         // Return the status.
         return l_return;
-
     }
 
     // drive_using_encoders
@@ -328,7 +403,6 @@ public class AvalancheTeleOp extends OpMode {
 
         // Return the status.
         return l_return;
-
     }
 
     // has_left_drive_encoder_reset
@@ -347,7 +421,6 @@ public class AvalancheTeleOp extends OpMode {
 
         // Return the status.
         return l_return;
-
     }
 
     //has_right_drive_encoder_reset
@@ -366,7 +439,6 @@ public class AvalancheTeleOp extends OpMode {
 
         // Return the status.
         return l_return;
-
     }
 
     //have_drive_encoders_reset
@@ -385,6 +457,5 @@ public class AvalancheTeleOp extends OpMode {
 
         // Return the status.
         return l_return;
-
     }
 }

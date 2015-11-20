@@ -3,132 +3,186 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
-import com.qualcomm.robotcore.hardware.Servo;import java.lang.Math;import java.lang.Override;
 
-public class AvalancheTeleOp extends OpMode {
-
-    final static double MOTOR_POWER = 0.50; // Higher values will cause the robot to move faster
-
-    final static double HOLD_IR_SIGNAL_STRENGTH = 0.20; // Higher values will cause the robot to follow closer
-
+/**
+ * Created by JasmineLee on 11/1/15.
+ */
+public class AvalancheEncoderTest extends OpMode
+{
+    int v_state;
     DcMotor motorRightFront;
     DcMotor motorRightBack;
     DcMotor motorLeftFront;
     DcMotor motorLeftBack;
-    Servo scoopTop;
-    Servo scoopLeft;
-    Servo scoopRight;
-    //IrSeekerSensor irSeeker;
 
-    public AvalancheTeleOp() {
-
+    public AvalancheEncoderTest()
+    {
     }
 
     @Override
-    public void init() {
-        //irSeeker = hardwareMap.irSeekerSensor.get("ir_seeker");
+    public void init()
+    {
         motorRightFront = hardwareMap.dcMotor.get("rf");
         motorRightBack = hardwareMap.dcMotor.get("rb");
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
-        //scoopTop = hardwareMap.servo.get("st");
-        //scoopLeft = hardwareMap.servo.get("sl");
-        //scoopRight = hardwareMap.servo.get("sr");
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
+        resetDriveEncoders();
     }
 
-    private double stValue = 0.0;
-    private double slValue = 0.0;
-    private double srValue = 0.0;
-    boolean e = true;
     @Override
     public void loop() {
-        runWithEncoders();
-        // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
-        // -1 is full down
-        double leftJoy = scaleInput(-gamepad1.left_stick_y);
-        double rightJoy = scaleInput(-gamepad1.right_stick_y);
 
-
-        if(gamepad1.right_trigger > .1 || gamepad1.right_bumper || gamepad1.left_trigger > .1|| gamepad1.left_bumper)
+        switch (v_state)
         {
-            if(gamepad1.right_trigger > .1)
-                setDrivePower(1.0,1.0,1.0,1.0);
-            else if(gamepad1.right_bumper)
-                setDrivePower(.5,.5,.5,.5);
-            else if(gamepad1.left_trigger > .1)
-                setDrivePower(-1.0,-1.0,-1.0,-1.0);
-            else
-                setDrivePower(-.5,-.5,-.5,-.5);
-        }
-        else {
-            // write the values to the motors
-            motorLeftFront.setPower(leftJoy);
-            motorLeftBack.setPower(leftJoy);
-            motorRightFront.setPower(rightJoy);
-            motorRightBack.setPower(rightJoy);
-        }
-/*
-        if(gamepad1.y)
-        {
-            if(stValue == 0.9)
-                stValue = 0.0;
-            else if(stValue == 0.0)
-                stValue = 0.9;
+            // Synchronize the state machine and hardware.
+            case 0:
+                // Reset the encoders to ensure they are at a known good value.
+                resetDriveEncoders();
+
+                // Transition to the next state when this method is called again.
+                v_state++;
+
+                break;
+            //
+            // Drive forward until the encoders exceed the specified values.
+            //
+            case 1:
+                //
+                // Tell the system that motor encoders will be used.  This call MUST
+                // be in this state and NOT the previous or the encoders will not
+                // work.  It doesn't need to be in subsequent states.
+                //
+                runWithEncoders ();
+
+                //
+                // Start the drive wheel motors at full power.
+                //
+                setDrivePower (1.0f, 1.0f, 1.0f, 1.0f);
+
+                //
+                // Have the motor shafts turned the required amount?
+                //
+                // If they haven't, then the op-mode remains in this state (i.e this
+                // block will be executed the next time this method is called).
+                //
+                if (haveDriveEncodersReached (2880, 2880))
+                {
+                    //
+                    // Reset the encoders to ensure they are at a known good value.
+                    //
+                    resetDriveEncoders ();
+
+                    //
+                    // Stop the motors.
+                    //
+                    setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
+
+                    //
+                    // Transition to the next state when this method is called
+                    // again.
+                    //
+                    v_state++;
+                }
+                break;
+            //
+            // Wait...
+            //
+            case 2:
+                if (haveDriveEncodersReset ())
+                {
+                    v_state++;
+                }
+                break;
+            //
+            // Turn left until the encoders exceed the specified values.
+            //
+            case 3:
+                runWithEncoders ();
+                setDrivePower (-1.0f, -1.0f, 1.0f, 1.0f);
+                if (haveDriveEncodersReached (2880, 2880))
+                {
+                    resetDriveEncoders ();
+                    setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
+                    v_state++;
+                }
+                break;
+            //
+            // Wait...
+            //
+            case 4:
+                if (haveDriveEncodersReset ())
+                {
+                    v_state++;
+                }
+                break;
+            //
+            // Turn right until the encoders exceed the specified values.
+            //
+            case 5:
+                runWithEncoders();
+                setDrivePower(1.0f, 1.0f, -1.0f, -1.0f);
+                if(haveDriveEncodersReached (2880, 2880))
+                {
+                    resetDriveEncoders ();
+                    setDrivePower (0.0f, 0.0f, 0.0f, 0.0f);
+                    v_state++;
+                }
+                break;
+            //
+            // Wait...
+            //
+            case 6:
+                if (haveDriveEncodersReset ())
+                {
+                    v_state++;
+                }
+                break;
+            //
+            // Perform no action - stay in this case until the OpMode is stopped.
+            // This method will still be called regardless of the state machine.
+            //
+            default:
+                //
+                // The autonomous actions have been accomplished (i.e. the state has
+                // transitioned into its final state.
+                //
+                break;
         }
 
-        if(gamepad1.x)
-        {
-            if(slValue == 0.9) {
-                slValue = 0.0;
-                srValue = 1.0;
-            }
-            else if(slValue == 0.0) {
-                slValue = 0.9;
-                srValue = 0.1;
-            }
-        }
-
-        scoopTop.setPosition(stValue);
-*/
-		/*
-		 * Send telemetry data back to driver station. Note that if we are using
+		/*Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
 		 * will return a null value. The legacy NXT-compatible motor controllers
-		 * are currently write only.
-		 */
+		 * are currently write only.*/
         telemetry.addData("Text", "*** Robot Data ***");
-        //telemetry.addData("left power: ", leftJoy);
-        //telemetry.addData("right power: ", rightJoy);
-        telemetry.addData("gamepad1.y: ", gamepad1.y);
-        telemetry.addData("stVal: ", stValue);
+        telemetry.addData("v_state: ", v_state);
+        telemetry.addData("Left Encoder: ", leftEncoderCount());
+        telemetry.addData("Right Encoder: ", rightEncoderCount());
     }
-    //}
 
     @Override
     public void stop() {
 
     }
 
-    double scaleInput(double dVal)  {
+    double scaleInput(double dVal)
+    {
         double[] scaleArray = { 0.0, 0.05, 0.09, 0.10, 0.12, 0.15, 0.18, 0.24,
                 0.30, 0.36, 0.43, 0.50, 0.60, 0.72, 0.85, 1.00, 1.00 };
 
         // get the corresponding index for the scaleInput array.
         int index = (int) (dVal * 16.0);
-        if (index < 0) {
+        if (index < 0)
             index = -index;
-        } else if (index > 16) {
+        else if (index > 16)
             index = 16;
-        }
 
         double dScale = 0.0;
-        if (dVal < 0) {
+        if (dVal < 0)
             dScale = -scaleArray[index];
-        } else {
+        else
             dScale = scaleArray[index];
-        }
 
         return dScale;
     }
@@ -136,21 +190,13 @@ public class AvalancheTeleOp extends OpMode {
     void setDrivePower(double LFPower, double LBPower, double RFPower, double RBPower)
     {
         if(motorLeftFront != null)
-            motorLeftFront.setPower(LFPower * .78);
-        else
-            throw new RuntimeException("motorLeftFront is null");
+            motorLeftFront.setPower(LFPower);
         if(motorLeftBack!= null)
-            motorLeftBack.setPower(LBPower * .35);
-        else
-            throw new RuntimeException("motorLeftBack is null");
+            motorLeftBack.setPower(LBPower);
         if(motorRightFront != null)
-            motorRightFront.setPower(RFPower * .78);
-        else
-            throw new RuntimeException("motorRightFront is null");
+            motorRightFront.setPower(RFPower);
         if(motorRightBack != null)
-            motorRightBack.setPower(RBPower * .35);
-        else
-            throw new RuntimeException("motorRightBack is null");
+            motorRightBack.setPower(RBPower);
     }
 
     public void runWithLeftDriveEncoder()
