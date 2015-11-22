@@ -15,10 +15,10 @@ public class AvalancheTeleOp extends OpMode {
     DcMotor motorRightBack;
     DcMotor motorLeftFront;
     DcMotor motorLeftBack;
+    DcMotor motorArm;
     Servo scoopTop;
     Servo scoopLeft;
     Servo scoopRight;
-    //IrSeekerSensor irSeeker;
 
     public AvalancheTeleOp() {
 
@@ -31,9 +31,10 @@ public class AvalancheTeleOp extends OpMode {
         motorRightBack = hardwareMap.dcMotor.get("rb");
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
-        //scoopTop = hardwareMap.servo.get("st");
-        //scoopLeft = hardwareMap.servo.get("sl");
-        //scoopRight = hardwareMap.servo.get("sr");
+        motorArm = hardwareMap.dcMotor.get("arm");
+        scoopTop = hardwareMap.servo.get("st");
+        scoopLeft = hardwareMap.servo.get("sl");
+        scoopRight = hardwareMap.servo.get("sr");
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
     }
@@ -42,6 +43,22 @@ public class AvalancheTeleOp extends OpMode {
     private double slValue = 0.0;
     private double srValue = 0.0;
     boolean e = true;
+
+    //Main Joystick
+    /* Driving with joysticks*/
+    //Auxiiary Joystick
+    /*
+        Right Joy: Angle of Hook
+        Left Joy: Arm Up & Down
+        Right Trigger: Harvester In
+        Left Trigger: Harvester Out
+        Top Hat Top: Hook Out
+        Top Hat Bottom: Hook In
+        Button A: Complicated Subroutine of servos with scoop
+        Button B: Climbers
+        Button Y: Open & Close Scoop
+    */
+
     @Override
     public void loop() {
         runWithEncoders();
@@ -50,7 +67,7 @@ public class AvalancheTeleOp extends OpMode {
         double leftJoy = scaleInput(-gamepad1.left_stick_y);
         double rightJoy = scaleInput(-gamepad1.right_stick_y);
 
-
+        //driving
         if(gamepad1.right_trigger > .1 || gamepad1.right_bumper || gamepad1.left_trigger > .1|| gamepad1.left_bumper)
         {
             if(gamepad1.right_trigger > .1)
@@ -69,8 +86,9 @@ public class AvalancheTeleOp extends OpMode {
             motorRightFront.setPower(rightJoy);
             motorRightBack.setPower(rightJoy);
         }
-/*
-        if(gamepad1.y)
+
+        //Complicated Subroutine of servos with scoop (not complete)
+        if(gamepad1.a)
         {
             if(stValue == 0.9)
                 stValue = 0.0;
@@ -90,8 +108,11 @@ public class AvalancheTeleOp extends OpMode {
             }
         }
 
+        //harvester
+        //if()
+
         scoopTop.setPosition(stValue);
-*/
+
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
@@ -201,6 +222,14 @@ public class AvalancheTeleOp extends OpMode {
         }
     }
 
+  /*  public void resetArmEncoders()
+    {
+        if(motorArm != null)
+        {
+
+        }
+    }*/
+
     public void resetDriveEncoders()
     {
         resetLeftDriveEncoders();
@@ -228,6 +257,18 @@ public class AvalancheTeleOp extends OpMode {
         if(motorRightFront != null)
         {
             l_return = motorRightFront.getCurrentPosition ();
+        }
+
+        return l_return;
+    }
+
+    int armEncoderCount()
+    {
+        int l_return = 0;
+
+        if(motorArm != null)
+        {
+            l_return = motorArm.getCurrentPosition ();
         }
 
         return l_return;
@@ -277,6 +318,25 @@ public class AvalancheTeleOp extends OpMode {
         return l_return;
     }
 
+    boolean hasArmEncoderReached(double p_count)
+    {
+        // Assume failure.
+        boolean l_return = false;
+
+        if(motorArm != null)
+        {
+            // Have the encoders reached the specified values?
+            // TODO Implement stall code using these variables.
+            if(Math.abs(motorArm.getCurrentPosition ()) > p_count)
+            {
+                // Set the status to a positive indication.
+                l_return = true;
+            }
+        }
+
+        // Return the status.
+        return l_return;
+    }
     // have_drive_encoders_reached
     //Indicate whether the drive motors' encoders have reached a value.
     boolean haveDriveEncodersReached(double p_left_count, double p_right_count)
@@ -299,7 +359,7 @@ public class AvalancheTeleOp extends OpMode {
 
     // drive_using_encoders
     //Indicate whether the drive motors' encoders have reached a value.
-    boolean drive_using_encoders( double LFPower, double LBPower, double RFPower, double RBPower,
+    boolean driveUsingEncoders( double LFPower, double LBPower, double RFPower, double RBPower,
                                   double LFCount, double LBCount, double RFCount, double RBCount)
     {
         // Assume the encoders have not reached the limit.
@@ -386,5 +446,21 @@ public class AvalancheTeleOp extends OpMode {
         // Return the status.
         return l_return;
 
+    }
+
+    boolean haveArmEncodersReset()
+    {
+        // Assume failure.
+        boolean l_return = false;
+
+        // Has the right encoder reached zero?
+        if (armEncoderCount() == 0)
+        {
+            // Set the status to a positive indication.
+            l_return = true;
+        }
+
+        // Return the status.
+        return l_return;
     }
 }
