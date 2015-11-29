@@ -122,20 +122,23 @@ public class AvalancheTeleOp extends OpMode {
             motorRightBack.setPower(rightJoy);
         }
 
-        //Complicated Subroutine of servos with scoop (not complete)
+        /Complicated Subroutine of servos with scoop (complete)
         if(gamepad1.a)
         {
             //if arm is down in harvesting position, move up to horizontal
             if(armEncoderCount() <= 100) //need to test this value to see where harvester needs to move
             {
-                //move arm up until harvester needs to move
+                boolean armClear = false; //if arm has cleared harvester yet
+
+                //move arm up until harvester needs to move & move harvester
                 setArmPower(0.5);
                 if(hasArmEncoderReached(100))
                 {
-                    hlValue = 0.45; //need to test values of these
-                    hrValue = 0.45;
+                    setArmPower(0.0); //stop arm movement
 
                     //move harvester up
+                    hlValue = 0.45; //need to test values of these
+                    hrValue = 0.45;
                     harvestLeft.setPosition(hlValue);
                     harvestRight.setPosition(hrValue);
 
@@ -147,16 +150,72 @@ public class AvalancheTeleOp extends OpMode {
                     scoopLeft.setPosition(slValue);
                     scoopRight.setPosition(srValue);
 
+                    armClear = true;
+                }
+                if(armClear)
+                {
                     //move arm up to horizontal
-                    hlValue = 0.7; //need to test values of these
-                    hrValue = 0.3;
+                    setArmPower(0.5);
+
+                    if(hasArmEncoderReached(200))
+                    {
+                        setArmPower(0.0);
+
+                        //move harvester down
+                        hlValue = 0.7; //need to test values of these
+                        hrValue = 0.3;
+                        harvestLeft.setPosition(hlValue);
+                        harvestRight.setPosition(hrValue);
+                    }
+                    armClear = false;
                 }
             }
             //if arm is up anywhere, move down to harvesting position
-            /*else
+            else
             {
+                boolean armClear = false; //if arm has cleared harvester yet
+                boolean harvestPos = false; //if arm is in harvest position
+                //move arm up until harvester needs to move & move harvester
+                setArmPower(-0.5);
+                if(hasArmEncoderReached(100))
+                {
+                    setArmPower(0.0); //stop arm movement
 
-            }*/
+                    //move harvester up
+                    hlValue = 0.45; //need to test values of these
+                    hrValue = 0.45;
+                    harvestLeft.setPosition(hlValue);
+                    harvestRight.setPosition(hrValue);
+
+                    //probably want a slight delay in here
+
+                    //move scoop head up
+                    slValue = 0.9;
+                    srValue = 0.1;
+                    scoopLeft.setPosition(slValue);
+                    scoopRight.setPosition(srValue);
+
+                    setArmPower(-0.5); //move arm down to harvest position
+                    armClear = true;
+                }
+                if(hasArmEncoderReached(0)) //stop when reached harvest
+                {
+                    setArmPower(0.0);
+
+                    //move scoop head up
+                    slValue = 0.0;
+                    srValue = 1.0;
+                    scoopLeft.setPosition(slValue);
+                    scoopRight.setPosition(srValue);
+
+                    //move harvester down
+                    hlValue = 0.7; //need to test values of these
+                    hrValue = 0.3;
+                    harvestLeft.setPosition(hlValue);
+                    harvestRight.setPosition(hrValue);
+                }
+
+            }
         }
 
         //opening & closing scoop
