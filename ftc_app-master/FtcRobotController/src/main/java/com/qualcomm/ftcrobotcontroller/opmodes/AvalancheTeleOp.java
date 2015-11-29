@@ -19,6 +19,8 @@ public class AvalancheTeleOp extends OpMode {
     Servo scoopTop;
     Servo scoopLeft;
     Servo scoopRight;
+    Servo harvestLeft;
+    Servo harvestRight;
 
     public AvalancheTeleOp() {
 
@@ -35,28 +37,36 @@ public class AvalancheTeleOp extends OpMode {
         scoopTop = hardwareMap.servo.get("st");
         scoopLeft = hardwareMap.servo.get("sl");
         scoopRight = hardwareMap.servo.get("sr");
+        harvestLeft = hardwareMap.servo.get("hl");
+        harvestRight = hardwareMap.servo.get("hr");
+
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
+
+        resetDriveEncoders();
+        resetArmEncoders();
     }
 
     private double stValue = 0.0;
-    private double slValue = 0.0;
-    private double srValue = 0.0;
+    private double slValue = 0.0; //need to figure out starting val
+    private double srValue = 0.0; //need to figure out starting val
+    private double hlValue = 0.0; //need to figure out starting val
+    private double hrValue = 0.0; //need to figure out starting val
     boolean e = true;
 
     //Main Joystick
     /* Driving with joysticks*/
     //Auxiiary Joystick
     /*
-        Right Joy: Angle of Hook
+        Right Joy: Angle of hook (working on - IDEA)
         Left Joy: Arm Up & Down
         Right Trigger: Harvester In
         Left Trigger: Harvester Out
         Top Hat Top: Hook Out
         Top Hat Bottom: Hook In
-        Button A: Complicated Subroutine of servos with scoop
+        Button A: Complicated Subroutine of servos with scoop (working on - JL)
         Button B: Climbers
-        Button Y: Open & Close Scoop
+        Button Y: Open & Close Scoop (done - JL)
     */
 
     @Override
@@ -90,26 +100,59 @@ public class AvalancheTeleOp extends OpMode {
         //Complicated Subroutine of servos with scoop (not complete)
         if(gamepad1.a)
         {
+            //if arm is down in harvesting position, move up to horizontal
+            if(armEncoderCount() <= 100) //need to test this value to see where harvester needs to move
+            {
+                //move arm up until harvester needs to move
+                setArmPower(0.5);
+                if(hasArmEncoderReached(100))
+                {
+                    hlValue = 0.45; //need to test values of these
+                    hrValue = 0.45;
+
+                    //move harvester up
+                    harvestLeft.setPosition(hlValue);
+                    harvestRight.setPosition(hrValue);
+
+                    //probably want a slight delay in here
+
+                    //move scoop head up
+                    slValue = 0.9;
+                    srValue = 0.1;
+                    scoopLeft.setPosition(slValue);
+                    scoopRight.setPosition(srValue);
+
+                    //move arm up to horizontal
+                    hlValue = 0.7; //need to test values of these
+                    hrValue = 0.3;
+                }
+            }
+            //if arm is up anywhere, move down to harvesting position
+            /*else
+            {
+
+            }*/
+        }
+
+        //opening & closing scoop
+        if(gamepad1.y)
+        {
             if(stValue == 0.9)
                 stValue = 0.0;
             else if(stValue == 0.0)
                 stValue = 0.9;
-        }
 
-        if(gamepad1.x)
-        {
-            if(slValue == 0.9) {
+            //values for left and right servos on scoop (needs to be integrated in)
+            /*if(slValue == 0.9) {
                 slValue = 0.0;
                 srValue = 1.0;
             }
             else if(slValue == 0.0) {
                 slValue = 0.9;
                 srValue = 0.1;
-            }
+            }*/
         }
 
-        //harvester
-        //if()
 
         scoopTop.setPosition(stValue);
 
@@ -157,21 +200,29 @@ public class AvalancheTeleOp extends OpMode {
     void setDrivePower(double LFPower, double LBPower, double RFPower, double RBPower)
     {
         if(motorLeftFront != null)
-            motorLeftFront.setPower(LFPower * .78);
+            motorLeftFront.setPower(LFPower * 0.78);
         else
             throw new RuntimeException("motorLeftFront is null");
         if(motorLeftBack!= null)
-            motorLeftBack.setPower(LBPower * .35);
+            motorLeftBack.setPower(LBPower * 0.78);
         else
             throw new RuntimeException("motorLeftBack is null");
         if(motorRightFront != null)
-            motorRightFront.setPower(RFPower * .78);
+            motorRightFront.setPower(RFPower * 0.78);
         else
             throw new RuntimeException("motorRightFront is null");
         if(motorRightBack != null)
-            motorRightBack.setPower(RBPower * .35);
+            motorRightBack.setPower(RBPower * 0.78);
         else
             throw new RuntimeException("motorRightBack is null");
+    }
+
+    void setArmPower(double armPower)
+    {
+        if(motorArm != null)
+            motorArm.setPower(armPower * 0.78);
+        else
+            throw new RuntimeException("motorArm is null");
     }
 
     public void runWithLeftDriveEncoder()
@@ -183,7 +234,6 @@ public class AvalancheTeleOp extends OpMode {
         }
     }
 
-    // run_using_right_drive_encoder
     // Set the right drive wheel encoder to run, if the mode is appropriate.
     public void runWithRightDriveEncoder()
     {
@@ -194,13 +244,13 @@ public class AvalancheTeleOp extends OpMode {
         }
     }
 
-    // run_using_encoders
     // Set both drive wheel encoders to run, if the mode is appropriate.
     public void runWithEncoders()
     {
         // Call other members to perform the action on both motors.
         runWithLeftDriveEncoder();
         runWithRightDriveEncoder();
+        motorArm.setChannelMode(DcMotorController.RunMode.RUN_USING_ENCODERS);
     }
 
     public void resetLeftDriveEncoders()
@@ -222,13 +272,13 @@ public class AvalancheTeleOp extends OpMode {
         }
     }
 
-  /*  public void resetArmEncoders()
+    public void resetArmEncoders()
     {
         if(motorArm != null)
         {
-
+            motorArm.setChannelMode(DcMotorController.RunMode.RESET_ENCODERS);
         }
-    }*/
+    }
 
     public void resetDriveEncoders()
     {
@@ -274,7 +324,6 @@ public class AvalancheTeleOp extends OpMode {
         return l_return;
     }
 
-    // has_left_drive_encoder_reached
     // Indicate whether the left drive motor's encoder has reached a value.
     boolean hasLeftDriveEncoderReached(double p_count)
     {
@@ -296,7 +345,6 @@ public class AvalancheTeleOp extends OpMode {
         return l_return;
     }
 
-    // has_right_drive_encoder_reached
     //Indicate whether the right drive motor's encoder has reached a value.
     boolean hasRightDriveEncoderReached(double p_count)
     {
@@ -337,7 +385,7 @@ public class AvalancheTeleOp extends OpMode {
         // Return the status.
         return l_return;
     }
-    // have_drive_encoders_reached
+
     //Indicate whether the drive motors' encoders have reached a value.
     boolean haveDriveEncodersReached(double p_left_count, double p_right_count)
     {
@@ -357,7 +405,6 @@ public class AvalancheTeleOp extends OpMode {
 
     }
 
-    // drive_using_encoders
     //Indicate whether the drive motors' encoders have reached a value.
     boolean driveUsingEncoders( double LFPower, double LBPower, double RFPower, double RBPower,
                                   double LFCount, double LBCount, double RFCount, double RBCount)
@@ -391,7 +438,6 @@ public class AvalancheTeleOp extends OpMode {
 
     }
 
-    // has_left_drive_encoder_reset
     //Indicate whether the left drive encoder has been completely reset.
     boolean hasLeftDriveEncoderReset()
     {
@@ -410,7 +456,6 @@ public class AvalancheTeleOp extends OpMode {
 
     }
 
-    //has_right_drive_encoder_reset
     //Indicate whether the left drive encoder has been completely reset.
     boolean hasRightDriveEncoderReset()
     {
@@ -429,7 +474,6 @@ public class AvalancheTeleOp extends OpMode {
 
     }
 
-    //have_drive_encoders_reset
     //Indicate whether the encoders have been completely reset.
     boolean haveDriveEncodersReset()
     {
