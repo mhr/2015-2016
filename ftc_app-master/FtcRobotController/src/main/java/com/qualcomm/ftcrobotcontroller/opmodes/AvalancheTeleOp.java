@@ -16,11 +16,15 @@ public class AvalancheTeleOp extends OpMode {
     DcMotor motorLeftFront;
     DcMotor motorLeftBack;
     DcMotor motorArm;
+    DcMotor motorTape;
+    DcMotor harvesterMotor;
+    Servo servoArm;
     Servo scoopTop;
     Servo scoopLeft;
     Servo scoopRight;
     Servo harvestLeft;
     Servo harvestRight;
+    Servo tapeAngle;
 
     public AvalancheTeleOp() {
 
@@ -34,11 +38,15 @@ public class AvalancheTeleOp extends OpMode {
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
         motorArm = hardwareMap.dcMotor.get("arm");
+        motorTape = hardwareMap.dcMotor.get("tapeMotor");
         scoopTop = hardwareMap.servo.get("st");
         scoopLeft = hardwareMap.servo.get("sl");
         scoopRight = hardwareMap.servo.get("sr");
         harvestLeft = hardwareMap.servo.get("hl");
         harvestRight = hardwareMap.servo.get("hr");
+        servoArm = hardwareMap.servo.get("sa");
+        tapeAngle = hardwareMap.servo.get("tapeServo");
+        harvesterMotor = hardwareMap.dcmotor.get("hm");
 
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
@@ -52,7 +60,16 @@ public class AvalancheTeleOp extends OpMode {
     private double srValue = 0.0; //need to figure out starting val
     private double hlValue = 0.0; //need to figure out starting val
     private double hrValue = 0.0; //need to figure out starting val
+    private double tapeValue = 0.0;
     boolean e = true;
+    
+    private int armTarget = 0;
+    private int integration = 0;
+    private int lastTime = 0;
+    private int lastPosition = 0;
+    
+    boolean releasedX = true;
+    boolean releasedY = true;
 
     //Main Joystick
     /* Driving with joysticks*/
@@ -67,10 +84,18 @@ public class AvalancheTeleOp extends OpMode {
         Button A: Complicated Subroutine of servos with scoop (working on - JL)
         Button B: Climbers
         Button Y: Open & Close Scoop (done - JL)
+        Button X: harvester toggle
     */
 
     @Override
     public void loop() {
+    	int time = System.currentTimeMillis();
+    	int dt = time - lastTime;
+    	lastTime = time;
+    	
+    	if(dt > 1000)
+    	    dt = 0;
+    	
         runWithEncoders();
         // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
         // -1 is full down
@@ -135,7 +160,7 @@ public class AvalancheTeleOp extends OpMode {
         }
 
         //opening & closing scoop
-        if(gamepad1.y)
+        if(gamepad1.y && releasedY)
         {
             if(stValue == 0.9)
                 stValue = 0.0;
@@ -151,11 +176,51 @@ public class AvalancheTeleOp extends OpMode {
                 slValue = 0.9;
                 srValue = 0.1;
             }*/
+            releasedY = false;
         }
+        else
+            releasedY = true;
+        
+	scoopTop.setPosition(stValue);
+	 
+	 
+	armTarget += scaleInput(-gamepad2.left_stick_y * dt / 3);
+	
+	int pos = motorArm.getCurrentPosition();
+	int p = armTarget - pos;
+	integration += p * dt;
+	int d = (lastPosition - pos)/dt;
+	lastPosition = pos;
+	
+	int power = .01 * p + .00001 * integration + .001 * d;
+	setArmPower(power);
+	
+	
+	tapeValue += scaleInput(-gamepad2.right_stick_y * dt / 10000);
+	tapeAngle.setPosition(tapeValue);
 
+	if(gamepad2.dpad_up)
+		motorTape.setPower(.78);
+	else if(gamepad2.dpad_down)
+		motorTape.setPower(-.78);
+	else
+		motorTape.setPower(0);
 
-        scoopTop.setPosition(stValue);
-
+        if(gamepad2.x && releasedX){
+       		hlValue = hlValue == 0? .45: 0;
+       		hrValue = hrValue == 0? .45: 0;
+       		releasedX = false;
+        }
+        else
+        	releasedX = true;
+        
+        if(gamepad2.right_bumper)
+            harvesterMotor.setPower(.78);
+        else if(gamepad2.left_bumper)
+            harvesterMotor.setPower(-.78);
+        else
+            harvesterMotor.setPower(0);
+        
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
 		 * a legacy NXT-compatible motor controller, then the getPower() method
@@ -219,6 +284,7 @@ public class AvalancheTeleOp extends OpMode {
 
     void setArmPower(double armPower)
     {
+    	armPower = Math.max(-1, Math.min(1, armPower));
         if(motorArm != null)
             motorArm.setPower(armPower * 0.78);
         else
