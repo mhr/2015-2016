@@ -46,7 +46,11 @@ public class AvalancheTeleOp extends OpMode {
         harvestRight = hardwareMap.servo.get("hr");
         servoArm = hardwareMap.servo.get("sa");
         tapeAngle = hardwareMap.servo.get("tapeServo");
+<<<<<<< Updated upstream
         harvesterMotor = hardwareMap.dcmotor.get("hm");
+=======
+        harvesterMotor = hardwareMap.dcMotor.get("hm");
+>>>>>>> Stashed changes
 
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
@@ -71,6 +75,14 @@ public class AvalancheTeleOp extends OpMode {
     boolean releasedX = true;
     boolean releasedY = true;
 
+    private int armTarget = 0;
+    private int integration = 0;
+    private long lastTime = 0;
+    private int lastPosition = 0;
+
+    boolean releasedX = true;
+    boolean releasedY = true;
+
     //Main Joystick
     /* Driving with joysticks*/
     //Auxiiary Joystick
@@ -89,6 +101,7 @@ public class AvalancheTeleOp extends OpMode {
 
     @Override
     public void loop() {
+<<<<<<< Updated upstream
     	int time = System.currentTimeMillis();
     	int dt = time - lastTime;
     	lastTime = time;
@@ -96,6 +109,15 @@ public class AvalancheTeleOp extends OpMode {
     	if(dt > 1000)
     	    dt = 0;
     	
+=======
+        long time = System.currentTimeMillis();
+        long dt = time - lastTime;
+        lastTime = time;
+
+        if(dt > 1000)
+            dt = 0;
+
+>>>>>>> Stashed changes
         runWithEncoders();
         // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
         // -1 is full down
@@ -122,7 +144,11 @@ public class AvalancheTeleOp extends OpMode {
             motorRightBack.setPower(rightJoy);
         }
 
+<<<<<<< Updated upstream
         /Complicated Subroutine of servos with scoop (complete)
+=======
+        //Complicated Subroutine of servos with scoop (complete)
+>>>>>>> Stashed changes
         if(gamepad1.a)
         {
             //if arm is down in harvesting position, move up to horizontal
@@ -239,6 +265,7 @@ public class AvalancheTeleOp extends OpMode {
         }
         else
             releasedY = true;
+<<<<<<< Updated upstream
         
 	scoopTop.setPosition(stValue);
 	 
@@ -273,6 +300,42 @@ public class AvalancheTeleOp extends OpMode {
         else
         	releasedX = true;
         
+=======
+
+        scoopTop.setPosition(stValue);
+
+
+        armTarget += scaleInput(-gamepad2.left_stick_y * dt / 3);
+
+        int pos = motorArm.getCurrentPosition();
+        int p = armTarget - pos;
+        integration += p * dt;
+        long d = (lastPosition - pos)/dt;
+        lastPosition = pos;
+
+        double power = .01 * p + .00001 * integration + .001 * d;
+        setArmPower(power);
+
+
+        tapeValue += scaleInput(-gamepad2.right_stick_y * dt / 10000);
+        tapeAngle.setPosition(tapeValue);
+
+        if(gamepad2.dpad_up)
+            motorTape.setPower(.78);
+        else if(gamepad2.dpad_down)
+            motorTape.setPower(-.78);
+        else
+            motorTape.setPower(0);
+
+        if(gamepad2.x && releasedX){
+            hlValue = hlValue == 0? .45: 0;
+            hrValue = hrValue == 0? .45: 0;
+            releasedX = false;
+        }
+        else
+            releasedX = true;
+
+>>>>>>> Stashed changes
         if(gamepad2.right_bumper)
             harvesterMotor.setPower(.78);
         else if(gamepad2.left_bumper)
@@ -343,7 +406,11 @@ public class AvalancheTeleOp extends OpMode {
 
     void setArmPower(double armPower)
     {
+<<<<<<< Updated upstream
     	armPower = Math.max(-1, Math.min(1, armPower));
+=======
+        armPower = Math.max(-1, Math.min(1, armPower));
+>>>>>>> Stashed changes
         if(motorArm != null)
             motorArm.setPower(armPower * 0.78);
         else
@@ -532,7 +599,7 @@ public class AvalancheTeleOp extends OpMode {
 
     //Indicate whether the drive motors' encoders have reached a value.
     boolean driveUsingEncoders( double LFPower, double LBPower, double RFPower, double RBPower,
-                                  double LFCount, double LBCount, double RFCount, double RBCount)
+                                double LFCount, double LBCount, double RFCount, double RBCount)
     {
         // Assume the encoders have not reached the limit.
         boolean l_return = false;

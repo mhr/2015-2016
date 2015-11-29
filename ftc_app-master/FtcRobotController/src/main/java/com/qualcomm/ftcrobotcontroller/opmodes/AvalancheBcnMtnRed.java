@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 /**
  * Created by JasmineLee on 11/16/15.
  */
-public class AvalancheBcnRed extends OpMode{
+public class AvalancheBcnMtnRed extends OpMode{
 
     DcMotor motorRightFront;
     DcMotor motorRightBack;
@@ -27,7 +27,7 @@ public class AvalancheBcnRed extends OpMode{
     private long lastTime;
     private long lastSuccess;
 
-    public AvalancheBcnRed()
+    public AvalancheBcnMtnRed()
     {
     }
 
@@ -143,7 +143,7 @@ public class AvalancheBcnRed extends OpMode{
                 v_state++;
                 break;
 
-            case 6: //turn to move out of way
+            case 6: //turn to move back
                 int p2 = 90 - gyro.getHeading();
                 integration += p2 * (System.currentTimeMillis() - lastTime);
                 int d2 = -gyro.rawZ();
@@ -166,10 +166,9 @@ public class AvalancheBcnRed extends OpMode{
                 else
                     lastSuccess = 0;
                 break;
-
-            case 7: //Block by going into blue
+            case 7: //move back to position for mountain
                 runWithEncoders();
-                setDrivePower(1.0f, 1.0f, 1.0f, 1.0f);
+                setDrivePower(-1.0f, -1.0f, -1.0f, -1.0f);
 
                 if(haveDriveEncodersReached(1000, 1000)) //need to test values
                 {
@@ -178,6 +177,67 @@ public class AvalancheBcnRed extends OpMode{
                     gyro.resetZAxisIntegrator();
                     v_state++;
                 }
+                break;
+
+            case 8: //turn to align with mountain
+                int p3 = 90 - gyro.getHeading();
+                integration += p3 * (System.currentTimeMillis() - lastTime);
+                int d3 = -gyro.rawZ();
+
+                double power3 = .005 * p3 + .000005 * integration + .01 * d3;
+                power2 = Math.max(-1, Math.min(1, power3));
+                setDrivePower(power2, power2, -power2,  -power2);
+
+                if (Math.abs(90 - gyro.getHeading()) < 3) {
+                    if(lastSuccess == 0)
+                        lastSuccess = System.currentTimeMillis();
+                    else if(System.currentTimeMillis() - lastSuccess > 500) {
+                        setDrivePower(0.0, 0.0, 0.0, 0.0);
+                        resetDriveEncoders();
+                        integration = 0;
+                        gyro.resetZAxisIntegrator();
+                        v_state++;
+                    }
+                }
+                else
+                    lastSuccess = 0;
+                break;
+
+            case 9: //move back to align
+                runWithEncoders();
+                setDrivePower(-1.0f, -1.0f, -1.0f, -1.0f);
+
+                if(haveDriveEncodersReached(1000, 1000)) //need to test values
+                {
+                    setDrivePower(0.0f, 0.0f, 0.0f, 0.0f);
+                    resetDriveEncoders();
+                    gyro.resetZAxisIntegrator();
+                    v_state++;
+                }
+                break;
+
+            case 10: //turn to mountain
+                int p4 = 90 - gyro.getHeading();
+                integration += p4 * (System.currentTimeMillis() - lastTime);
+                int d4 = -gyro.rawZ();
+
+                double power4 = .005 * p4 + .000005 * integration + .01 * d4;
+                power2 = Math.max(-1, Math.min(1, power4));
+                setDrivePower(power2, power2, -power2,  -power2);
+
+                if (Math.abs(90 - gyro.getHeading()) < 3) {
+                    if(lastSuccess == 0)
+                        lastSuccess = System.currentTimeMillis();
+                    else if(System.currentTimeMillis() - lastSuccess > 500) {
+                        setDrivePower(0.0, 0.0, 0.0, 0.0);
+                        resetDriveEncoders();
+                        integration = 0;
+                        gyro.resetZAxisIntegrator();
+                        v_state++;
+                    }
+                }
+                else
+                    lastSuccess = 0;
                 break;
 
             default: //The autonomous actions have been accomplished
