@@ -17,8 +17,8 @@ public class AvalancheTeleOp extends OpMode {
     DcMotor motorLeftBack;
     DcMotor motorArm;
     DcMotor motorTape;
-    DcMotor harvesterMotor;
-    Servo servoArm;
+   // DcMotor harvesterMotor;
+    Servo servoTape;
     Servo scoopTop;
     Servo scoopLeft;
     Servo scoopRight;
@@ -38,19 +38,14 @@ public class AvalancheTeleOp extends OpMode {
         motorLeftFront = hardwareMap.dcMotor.get("lf");
         motorLeftBack = hardwareMap.dcMotor.get("lb");
         motorArm = hardwareMap.dcMotor.get("arm");
-        motorTape = hardwareMap.dcMotor.get("tapeMotor");
+        motorTape = hardwareMap.dcMotor.get("tm");
         scoopTop = hardwareMap.servo.get("st");
         scoopLeft = hardwareMap.servo.get("sl");
         scoopRight = hardwareMap.servo.get("sr");
         harvestLeft = hardwareMap.servo.get("hl");
         harvestRight = hardwareMap.servo.get("hr");
-        servoArm = hardwareMap.servo.get("sa");
-        tapeAngle = hardwareMap.servo.get("tapeServo");
-<<<<<<< Updated upstream
-        harvesterMotor = hardwareMap.dcmotor.get("hm");
-=======
-        harvesterMotor = hardwareMap.dcMotor.get("hm");
->>>>>>> Stashed changes
+        tapeAngle = hardwareMap.servo.get("sa");
+      //  harvesterMotor = hardwareMap.dcMotor.get("hm");
 
         motorRightFront.setDirection(DcMotor.Direction.REVERSE);
         motorRightBack.setDirection(DcMotor.Direction.REVERSE);
@@ -66,14 +61,6 @@ public class AvalancheTeleOp extends OpMode {
     private double hrValue = 0.0; //need to figure out starting val
     private double tapeValue = 0.0;
     boolean e = true;
-    
-    private int armTarget = 0;
-    private int integration = 0;
-    private int lastTime = 0;
-    private int lastPosition = 0;
-    
-    boolean releasedX = true;
-    boolean releasedY = true;
 
     private int armTarget = 0;
     private int integration = 0;
@@ -101,23 +88,14 @@ public class AvalancheTeleOp extends OpMode {
 
     @Override
     public void loop() {
-<<<<<<< Updated upstream
-    	int time = System.currentTimeMillis();
-    	int dt = time - lastTime;
-    	lastTime = time;
-    	
-    	if(dt > 1000)
-    	    dt = 0;
-    	
-=======
+
         long time = System.currentTimeMillis();
         long dt = time - lastTime;
         lastTime = time;
 
         if(dt > 1000)
-            dt = 0;
+            dt = 1;
 
->>>>>>> Stashed changes
         runWithEncoders();
         // Joy: left_stick_y ranges from -1 to 1, where 1 is full up, and
         // -1 is full down
@@ -144,11 +122,7 @@ public class AvalancheTeleOp extends OpMode {
             motorRightBack.setPower(rightJoy);
         }
 
-<<<<<<< Updated upstream
-        /Complicated Subroutine of servos with scoop (complete)
-=======
         //Complicated Subroutine of servos with scoop (complete)
->>>>>>> Stashed changes
         if(gamepad1.a)
         {
             //if arm is down in harvesting position, move up to horizontal
@@ -251,61 +225,24 @@ public class AvalancheTeleOp extends OpMode {
                 stValue = 0.0;
             else if(stValue == 0.0)
                 stValue = 0.9;
-
-            //values for left and right servos on scoop (needs to be integrated in)
-            /*if(slValue == 0.9) {
-                slValue = 0.0;
-                srValue = 1.0;
-            }
-            else if(slValue == 0.0) {
-                slValue = 0.9;
-                srValue = 0.1;
-            }*/
             releasedY = false;
         }
         else
             releasedY = true;
-<<<<<<< Updated upstream
-        
-	scoopTop.setPosition(stValue);
-	 
-	 
-	armTarget += scaleInput(-gamepad2.left_stick_y * dt / 3);
-	
-	int pos = motorArm.getCurrentPosition();
-	int p = armTarget - pos;
-	integration += p * dt;
-	int d = (lastPosition - pos)/dt;
-	lastPosition = pos;
-	
-	int power = .01 * p + .00001 * integration + .001 * d;
-	setArmPower(power);
-	
-	
-	tapeValue += scaleInput(-gamepad2.right_stick_y * dt / 10000);
-	tapeAngle.setPosition(tapeValue);
 
-	if(gamepad2.dpad_up)
-		motorTape.setPower(.78);
-	else if(gamepad2.dpad_down)
-		motorTape.setPower(-.78);
-	else
-		motorTape.setPower(0);
-
-        if(gamepad2.x && releasedX){
-       		hlValue = hlValue == 0? .45: 0;
-       		hrValue = hrValue == 0? .45: 0;
-       		releasedX = false;
+        //values for left and right servos on scoop (needs to be integrated in)
+        /*if(slValue > 0.5) {
+            slValue = 0.0;
+            srValue = 1.0;
         }
-        else
-        	releasedX = true;
-        
-=======
+        else if(slValue <= 0.5) {
+            slValue = 0.9;
+            srValue = 0.1;
+        }*/
 
-        scoopTop.setPosition(stValue);
+	    scoopTop.setPosition(stValue);
 
-
-        armTarget += scaleInput(-gamepad2.left_stick_y * dt / 3);
+        armTarget += scaleInput(-gamepad2.left_stick_y) * dt/3;
 
         int pos = motorArm.getCurrentPosition();
         int p = armTarget - pos;
@@ -317,7 +254,7 @@ public class AvalancheTeleOp extends OpMode {
         setArmPower(power);
 
 
-        tapeValue += scaleInput(-gamepad2.right_stick_y * dt / 10000);
+        tapeValue += scaleInput(-gamepad2.right_stick_y) * dt/10;
         tapeAngle.setPosition(tapeValue);
 
         if(gamepad2.dpad_up)
@@ -335,13 +272,12 @@ public class AvalancheTeleOp extends OpMode {
         else
             releasedX = true;
 
->>>>>>> Stashed changes
-        if(gamepad2.right_bumper)
+       /* if(gamepad2.right_bumper)
             harvesterMotor.setPower(.78);
         else if(gamepad2.left_bumper)
             harvesterMotor.setPower(-.78);
         else
-            harvesterMotor.setPower(0);
+            harvesterMotor.setPower(0);*/
         
 		/*
 		 * Send telemetry data back to driver station. Note that if we are using
@@ -368,11 +304,11 @@ public class AvalancheTeleOp extends OpMode {
 
         // get the corresponding index for the scaleInput array.
         int index = (int) (dVal * 16.0);
-        if (index < 0) {
+        if (index < 0)
             index = -index;
-        } else if (index > 16) {
+        if (index > 16)
             index = 16;
-        }
+
 
         double dScale = 0.0;
         if (dVal < 0) {
@@ -406,11 +342,8 @@ public class AvalancheTeleOp extends OpMode {
 
     void setArmPower(double armPower)
     {
-<<<<<<< Updated upstream
     	armPower = Math.max(-1, Math.min(1, armPower));
-=======
         armPower = Math.max(-1, Math.min(1, armPower));
->>>>>>> Stashed changes
         if(motorArm != null)
             motorArm.setPower(armPower * 0.78);
         else
