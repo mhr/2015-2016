@@ -74,7 +74,7 @@ public class AvalancheTeleOp extends OpMode {
     /* Driving with joysticks*/
     //Auxiiary Joystick
     /*
-        Right Joy: Angle of hook (working on - IDEA)
+        Right Joy: Angle of hook (done - IDEA)
         Left Joy: Arm Up & Down
         Right Trigger: Harvester In
         Left Trigger: Harvester Out
@@ -92,6 +92,7 @@ public class AvalancheTeleOp extends OpMode {
         long time = System.currentTimeMillis();
         long dt = time - lastTime;
         lastTime = time;
+        String button;
 
         if(dt > 1000)
             dt = 1;
@@ -102,9 +103,13 @@ public class AvalancheTeleOp extends OpMode {
         double leftJoy = scaleInput(-gamepad1.left_stick_y);
         double rightJoy = scaleInput(-gamepad1.right_stick_y);
 
+        if(gamepad2.right_stick_y != 0)
+            button = "G2 right joy: ";
+        
         //driving
         if(gamepad1.right_trigger > .1 || gamepad1.right_bumper || gamepad1.left_trigger > .1|| gamepad1.left_bumper)
         {
+            button = "G1: trig/bump";
             if(gamepad1.right_trigger > .1)
                 setDrivePower(1.0,1.0,1.0,1.0);
             else if(gamepad1.right_bumper)
@@ -115,6 +120,7 @@ public class AvalancheTeleOp extends OpMode {
                 setDrivePower(-.5,-.5,-.5,-.5);
         }
         else {
+            button = "G1: joysticks";
             // write the values to the motors
             motorLeftFront.setPower(leftJoy);
             motorLeftBack.setPower(leftJoy);
@@ -123,8 +129,9 @@ public class AvalancheTeleOp extends OpMode {
         }
 
         //Complicated Subroutine of servos with scoop (complete)
-        if(gamepad1.a)
+        if(gamepad2.a)
         {
+            button = "G1: A";
             //if arm is down in harvesting position, move up to horizontal
             if(armEncoderCount() <= 100) //need to test this value to see where harvester needs to move
             {
@@ -219,8 +226,9 @@ public class AvalancheTeleOp extends OpMode {
         }
 
         //opening & closing scoop
-        if(gamepad1.y && releasedY)
+        if(gamepad2.y && releasedY)
         {
+            button = "G2: Y";
             if(stValue == 0.9)
                 stValue = 0.0;
             else if(stValue == 0.0)
@@ -257,7 +265,7 @@ public class AvalancheTeleOp extends OpMode {
         tapeValue += scaleInput(-gamepad2.right_stick_y) * dt/10;
         tapeAngle.setPosition(tapeValue);
 
-        if(gamepad2.dpad_up)
+        if(gamepad2.dpad_up) // working
             motorTape.setPower(.78);
         else if(gamepad2.dpad_down)
             motorTape.setPower(-.78);
@@ -288,8 +296,14 @@ public class AvalancheTeleOp extends OpMode {
         telemetry.addData("Text", "*** Robot Data ***");
         //telemetry.addData("left power: ", leftJoy);
         //telemetry.addData("right power: ", rightJoy);
+        telemetry.addData("button: ", button);
         telemetry.addData("gamepad1.y: ", gamepad1.y);
         telemetry.addData("stVal: ", stValue);
+        telemetry.addData("slVal: ", slValue);
+        telemetry.addData("srVal: ", srValue);
+        telemetry.addData("hlVal: ", hlValue);
+        telemetry.addData("hrVal: ", hrValue);
+        telemetry.addData("tapeVal: ", tapeValue);
     }
     //}
 
