@@ -250,7 +250,7 @@ public class AvalancheTeleOp extends OpMode {
 
 	    scoopTop.setPosition(stValue);
 
-        armTarget += scaleInput(-gamepad2.left_stick_y) * dt/3;
+        armTarget += scaleInput(-gamepad2.left_stick_y) * dt/3; // need max and min implementation
 
         int pos = motorArm.getCurrentPosition();
         int p = armTarget - pos;
@@ -259,10 +259,12 @@ public class AvalancheTeleOp extends OpMode {
         lastPosition = pos;
 
         double power = .01 * p + .00001 * integration + .001 * d;
+        power = Math.max(-1, Math.min(1, power));
         setArmPower(power);
 
 
         tapeValue += scaleInput(-gamepad2.right_stick_y) * dt/10;
+        tapeValue = Math.max(0, Math.min(1, tapeValue));
         tapeAngle.setPosition(tapeValue);
 
         if(gamepad2.dpad_up) // working
